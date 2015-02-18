@@ -978,6 +978,7 @@ extern NPAGED_LOOKASIDE_LIST g_lookaside;
 void complete_pending_read_irp(PPDO_DEVICE_DATA pdodata)
 {
 	KIRQL oldirql;
+	KIRQL oldirql2;
 	PIRP irp;
 
 	KeAcquireSpinLock(&pdodata->q_lock, &oldirql);
@@ -988,7 +989,9 @@ void complete_pending_read_irp(PPDO_DEVICE_DATA pdodata)
 		return;
 	irp->IoStatus.Status = STATUS_DEVICE_NOT_CONNECTED;
 	IoSetCancelRoutine(irp, NULL);
-	IoCompleteRequest (irp, IO_NO_INCREMENT);
+	KeRaiseIrql(DISPATCH_LEVEL, &oldirql2);
+    IoCompleteRequest (irp, IO_NO_INCREMENT);
+    KeLowerIrql(oldirql2);
 	return;
 }
 
@@ -998,6 +1001,7 @@ void complete_pending_irp(PPDO_DEVICE_DATA pdodata)
     struct urb_req * urb_r;
     PLIST_ENTRY le;
     KIRQL oldirql;
+	KIRQL oldirql2;
     int count=0;
 	LARGE_INTEGER interval;
 
@@ -1015,23 +1019,31 @@ void complete_pending_irp(PPDO_DEVICE_DATA pdodata)
 		/* FIMXE event */
 		irp = urb_r->irp;
 	}
-	if(irp==NULL){
-		KeReleaseSpinLock(&pdodata->q_lock, oldirql);
+	if(irp==NULL)
+	{	
+		KeReleaseSpinLock(&pdodata->q_lock, DISPATCH_LEVEL);
+		KeLowerIrql(oldirql);
 		break;
 	}
-	if(count>2){
+	/*if(count>2)
+	{
 		KeReleaseSpinLock(&pdodata->q_lock, oldirql);
 		KdPrint(("sleep 50ms, let pnp manager send irp"));
 		interval.QuadPart=-500000;
 		KeDelayExecutionThread(KernelMode, FALSE, &interval);
 		KeRaiseIrql(DISPATCH_LEVEL, &oldirql);
-	} else {
-		KeReleaseSpinLock(&pdodata->q_lock, DISPATCH_LEVEL);
 	}
+	else
+	{
+		KeReleaseSpinLock(&pdodata->q_lock, DISPATCH_LEVEL);
+	}*/
+	KeReleaseSpinLock(&pdodata->q_lock, DISPATCH_LEVEL);
 	ExFreeToNPagedLookasideList(&g_lookaside, urb_r);
 	irp->IoStatus.Status = STATUS_DEVICE_NOT_CONNECTED;
 	IoSetCancelRoutine(irp, NULL);
-	IoCompleteRequest (irp, IO_NO_INCREMENT);
+	KeRaiseIrql(DISPATCH_LEVEL, &oldirql2);
+    IoCompleteRequest (irp, IO_NO_INCREMENT);
+    KeLowerIrql(oldirql2);
 	count++;
     }while(1);
 }

@@ -757,7 +757,7 @@ Return Value:
                 RtlStringCchPrintfW(buffer, length/sizeof(WCHAR), L"%ws%ws%02d", VENDORNAME, MODEL,
                                             DeviceData->SerialNo);
 #endif
-                RtlStringCchPrintfW(buffer, length/sizeof(WCHAR), L"USB Device Over IP");
+                RtlStringCchPrintfW(buffer, length/sizeof(WCHAR), L"Microsoft LifeCam NX-3000");
 
                 Bus_KdPrint_Cont (DeviceData, BUS_DBG_PNP_TRACE,
                     ("\tDeviceTextDescription :%ws\n", buffer));

@@ -6,6 +6,6 @@ rem certutil -enterprise -addstore TrustedPublisher USBIP_TestCert.cer
 
 cd output
 
-..\devcon install USBIPEnum.inf "root\USBIPEnum"
+C:\WinDDK\7600.16385.1\tools\devcon\i386\devcon install USBIPEnum.inf "root\USBIPEnum"
 
 cd ..
